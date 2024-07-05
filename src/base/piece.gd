@@ -202,13 +202,13 @@ func _init(piece: Pieces):
 			tile_type = Tile.TileType.Z_PIECE
 
 	tiles = []
-	for row in PIECE_ARRAYS[piece][0]:
+	for i in range(PIECE_ARRAYS[piece][0].size()):
 		tiles.append([])
-		for tile in row:
+		for tile in PIECE_ARRAYS[piece][0][i]:
 			if tile == 1:
-				tiles.append(Tile.new(tile_type, Tile.State.FALLING))
+				tiles[i].append(Tile.new(tile_type, Tile.State.FALLING))
 			else:
-				tiles.append(Tile.new(Tile.TileType.EMPTY, Tile.State.EMPTY))
+				tiles[i].append(Tile.new(Tile.TileType.EMPTY, Tile.State.EMPTY))
 
 func set_rotation(new_rotation: RotationState):
 	if rotation == new_rotation:

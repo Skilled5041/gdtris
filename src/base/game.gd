@@ -1,6 +1,6 @@
 extends Node
 
-class_name Board
+class_name Game
 
 # TODO: add config options for this
 var auto_repeat_rate: int = 0
@@ -113,13 +113,13 @@ func spawn_new_piece(piece: Piece):
 	already_held = false
 
 	current_piece_coordinates.clear()
-	current_piece_top_left_corner = Vector2(3, 2)
+	current_piece_top_left_corner = Vector2(3, 1)
 
 	# Check if player is dead
 	for i in range(0, current_piece.tiles[0].size()):
 		for j in range(0, current_piece.tiles.size()):
 			if current_piece.tiles[j][i].state != Tile.State.EMPTY:
-				if board[i + 3][j + 2].state != Tile.State.EMPTY:
+				if board[i + 3][j + 1].state != Tile.State.EMPTY:
 					alive = false
 					game_ended = true
 					return
@@ -128,9 +128,9 @@ func spawn_new_piece(piece: Piece):
 	for i in range(current_piece.tiles[0].size()):
 		for j in range(current_piece.tiles.size()):
 			if current_piece.tiles[j][i].state != Tile.State.EMPTY:
-				board[i + 3][j + 2].state = current_piece.tiles[j][i].state
-				board[i + 3][j + 2].type = current_piece.tiles[j][i].type
-				current_piece_coordinates.push_back(Vector2(i + 3, j + 2))
+				board[i + 3][j + 1].state = current_piece.tiles[j][i].state
+				board[i + 3][j + 1].type = current_piece.tiles[j][i].type
+				current_piece_coordinates.push_back(Vector2(i + 3, j + 1))
 
 	ghost_coordinates = calculate_drop_position()
 	show_ghost(ghost_coordinates)
@@ -161,7 +161,7 @@ func calculate_drop_position():
 				amount_to_fall = min(amount_to_fall, i - point.y)
 
 	for point in current_piece_coordinates:
-		if point.y + (0 if amount_to_fall == 25 else amount_to_fall) > 23:
+		if point.y + (0 if amount_to_fall == 24 else amount_to_fall) > 23:
 			return current_piece_coordinates
 		new_coordinates.push_back(Vector2(point.x, point.y + (0 if amount_to_fall == 24 else amount_to_fall)))
 
@@ -180,7 +180,7 @@ func show_ghost(ghost_coords: Array[Vector2]):
 
 func _init():
 	# Initialize the board and other variables
-	# Board is 10 x 24
+	# Game is 10 x 24
 	for i in range(10):
 		board.append([])
 		for j in range(24):
@@ -239,8 +239,8 @@ func clear_lines():
 	# Store all rows that might be full
 	var rows_to_check: Array[int] = []
 	for point in current_piece_coordinates:
-		if !rows_to_check.has(point.y):
-			rows_to_check.push_back(point.y)
+		if !rows_to_check.has(int(point.y)):
+			rows_to_check.push_back(int(point.y))
 
 	var removed_rows: Array[int] = []
 
@@ -282,8 +282,8 @@ func hard_drop():
 
 	current_piece_coordinates = ghost_coordinates
 	for point in current_piece_coordinates:
-		board[point.x][point.y].state = current_piece.tile_type
-		board[point.x][point.y].type = Tile.State.FALLING
+		board[point.x][point.y].type = current_piece.tile_type
+		board[point.x][point.y].state = Tile.State.FALLING
 
 	place_piece()
 
@@ -330,16 +330,16 @@ func move_piece(move_direction: MoveDirections):
 
 	# Remove the ghost
 	for point in ghost_coordinates:
-		if board[point.x][point.y].state == Tile.TileType.GHOST:
-			board[point.x][point.y].type = Tile.TileType.EMPTY
+		board[point.x][point.y].state = Tile.State.EMPTY
+		board[point.x][point.y].type = Tile.TileType.EMPTY
 
 	# Update the ghost
 	ghost_coordinates = calculate_drop_position()
 	show_ghost(ghost_coordinates)
 
 	for point in current_piece_coordinates:
-		board[point.x][point.y].state = current_piece.tile_type
-		board[point.x][point.y].type = Tile.State.FALLING
+		board[point.x][point.y].type = current_piece.tile_type
+		board[point.x][point.y].state = Tile.State.FALLING
 
 	drop_lock_time = 0
 	drop_lock_reset_count += 1
