@@ -24,6 +24,18 @@ func _process(delta):
 	elif Input.is_action_just_pressed("soft_drop"):
 		game.move_piece(Game.MoveDirections.DOWN)
 		queue_redraw()
+	elif Input.is_action_just_pressed("rotate_cw"):
+		game.rotate_piece(Piece.RotationAmount.NINETY_DEGREES)
+		queue_redraw()
+	elif Input.is_action_just_pressed("rotate_ccw"):
+		game.rotate_piece(Piece.RotationAmount.TWO_HUNDRED_SEVENTY_DEGREES)
+		queue_redraw()
+	elif Input.is_action_just_pressed("rotate_180"):
+		game.rotate_piece(Piece.RotationAmount.ONE_HUNDRED_EIGHTY_DEGREES)
+		queue_redraw()
+	elif Input.is_action_just_pressed("hold"):
+		game.hold()
+		queue_redraw()
 		
 
 func _draw():

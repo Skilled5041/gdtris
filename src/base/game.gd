@@ -96,12 +96,14 @@ func hold():
 
 	# Hold the piece
 	if hold_piece == null:
-		hold_piece = Piece.new(current_piece.type)
+		hold_piece = Piece.new(current_piece.piece_type)
+		already_held = true
 		spawn_new_piece_from_bag()
 	else:
-		var temp = Piece.new(current_piece.type)
-		current_piece = Piece.new(hold_piece.type)
-		hold_piece = Piece.new(temp.type)
+		already_held = true
+		var temp = Piece.new(current_piece.piece_type)
+		current_piece = Piece.new(hold_piece.piece_type)
+		hold_piece = Piece.new(temp.piece_type)
 		spawn_new_piece(current_piece)
 
 func spawn_new_piece_from_bag():
@@ -110,7 +112,6 @@ func spawn_new_piece_from_bag():
 
 func spawn_new_piece(piece: Piece):
 	current_piece = piece
-	already_held = false
 
 	current_piece_coordinates.clear()
 	current_piece_top_left_corner = Vector2(3, 1)
@@ -142,18 +143,19 @@ func calculate_drop_position():
 
 	for point in current_piece_coordinates:
 		var add = true
-		for filtered_point in filtered_coordinates:
-			if point.x == filtered_point.x:
+		for index in range(filtered_coordinates.size()):
+			if point.x == filtered_coordinates[index].x:
 				add = false
-				if point.y > filtered_point.y:
-					filtered_point.y = point.y
+				if point.y > filtered_coordinates[index].y:
+					filtered_coordinates[index].y = point.y
 		if add:
 			filtered_coordinates.push_back(Vector2(point.x, point.y))
+
 
 	var amount_to_fall = 24
 	for point in filtered_coordinates:
 		# Check how far the piece can fall
-		for i in range(point.y + 1, 24):
+		for i in range(point.y, 24):
 			if board[point.x][i].state == Tile.State.PLACED:
 				amount_to_fall = min(amount_to_fall, i - point.y - 1)
 				break
@@ -217,6 +219,8 @@ func _init():
 		piece_queue.push_back(get_piece_from_bag())
 
 func place_piece():
+	already_held = false
+
 	for point in current_piece_coordinates:
 		board[point.x][point.y].state = Tile.State.PLACED
 		highest_piece_row = min(highest_piece_row, point.y)
@@ -349,24 +353,27 @@ func move_piece(move_direction: MoveDirections):
 		drop_lock_time = 0
 
 # 1 for clockwise, 2 for 180, 3 for counterclockwise
-func calculate_rotation(rotations: int):
-	rotations %= current_piece.get_number_of_rotation_states()
-
-	if rotations == 0:
+func calculate_rotation(rotations: Piece.RotationAmount):
+	if rotations == 0 or current_piece.piece_type == Piece.Pieces.O_PIECE:
 		return null
 	
 	var rotated_piece = Piece.new(current_piece.piece_type)
-	rotated_piece.rotation %= current_piece.rotation + rotations
+	rotated_piece.rotation = current_piece.rotation
+	rotated_piece.rotate(rotations)
 
 	# Calculate the rotation
 	# (current rotation, rotated rotation)
 	var rotation = Vector2(current_piece.rotation, rotated_piece.rotation)
-	var kicks: Array[Vector2]
+	var kicks: Array
 
 	if current_piece.piece_type == Piece.Pieces.I_PIECE:
-		kicks = KickTables.IWallKickData[rotation]
+		if not KickTables.IWallKickData.has(rotation):
+			return null
+		kicks = KickTables.IWallKickData[Vector2(int(rotation.x), int(rotation.y))]
 	else:
-		kicks = KickTables.NonIWallKickData[rotation]
+		if not KickTables.NonIWallKickData.has(rotation):
+			return null
+		kicks = KickTables.NonIWallKickData[Vector2(int(rotation.x), int(rotation.y))]
 
 	# Try each kick
 	for kick in kicks:
@@ -399,9 +406,7 @@ func calculate_rotation(rotations: int):
 	
 	return null
 
-func rotate_piece(rotations: int):
-	rotations %= current_piece.get_number_of_rotation_states()
-
+func rotate_piece(rotations: Piece.RotationAmount):
 	if rotations == 0 || current_piece.piece_type == Piece.Pieces.O_PIECE:
 		return
 
@@ -411,15 +416,7 @@ func rotate_piece(rotations: int):
 	if kick == null:
 		return
 
-	match (int(current_piece.rotation) + rotations) % current_piece.get_number_of_rotation_states():
-		0:
-			current_piece.rotation = Piece.RotationState.ZERO_DEGREES
-		1:
-			current_piece.rotation = Piece.RotationState.NINETY_DEGREES
-		2:
-			current_piece.rotation = Piece.RotationState.ONE_HUNDRED_EIGHTY_DEGREES
-		3:
-			current_piece.rotation = Piece.RotationState.TWO_HUNDRED_SEVENTY_DEGREES
+	current_piece.rotate(rotations)
 
 	# Remove the current piece from the boast
 	for point in current_piece_coordinates:
@@ -427,14 +424,13 @@ func rotate_piece(rotations: int):
 		board[point.x][point.y].type = Tile.TileType.EMPTY
 
 	current_piece_coordinates.clear()
-
 	# Add the rotated piece to the board
 	for i in range(current_piece.tiles.size()):
 		for j in range(current_piece.tiles[i].size()):
 			if current_piece.tiles[i][j].state == Tile.State.FALLING:
 				current_piece_coordinates.push_back(Vector2(j + current_piece_top_left_corner.x + kick.x, i + current_piece_top_left_corner.y + kick.y))
 				board[j + current_piece_top_left_corner.x + kick.x][i + current_piece_top_left_corner.y + kick.y].state = Tile.State.FALLING
-				board[j + current_piece_top_left_corner.x + kick.x][i + current_piece_top_left_corner.y + kick.y].type = current_piece.tile_type
+				board[j + current_piece_top_left_corner.x + kick.x][i + current_piece_top_left_corner.y + kick.y].type = current_piece.piece_type
 
 	# Update the top left corner
 	current_piece_top_left_corner.x += kick.x

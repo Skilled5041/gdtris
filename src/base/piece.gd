@@ -166,7 +166,7 @@ const PIECE_ARRAYS = [
 	]
 ]
 
-enum RotationState {
+enum RotationAmount {
 	ZERO_DEGREES,
 	NINETY_DEGREES,
 	ONE_HUNDRED_EIGHTY_DEGREES,
@@ -181,7 +181,7 @@ func get_number_of_rotation_states() -> int:
 var piece_type: Pieces
 var tile_type: Tile.TileType
 var tiles: Array[Array]
-var rotation: RotationState = RotationState.ZERO_DEGREES
+var rotation: RotationAmount = RotationAmount.ZERO_DEGREES
 
 func _init(piece: Pieces):
 	piece_type = piece
@@ -210,14 +210,19 @@ func _init(piece: Pieces):
 			else:
 				tiles[i].append(Tile.new(Tile.TileType.EMPTY, Tile.State.EMPTY))
 
-func set_rotation(new_rotation: RotationState):
-	if rotation == new_rotation:
+func rotate(rotate_by: RotationAmount):
+	if rotate_by == RotationAmount.ZERO_DEGREES:
 		return
-	
-	rotation = new_rotation
-	for row in PIECE_ARRAYS[piece_type][rotation]:
-		for tile in row:
-			if tile == 1:
-				tile.append(Tile.new(tile_type, Tile.State.FALLING))
+
+	var new_rotation = (int(rotation) + int(rotate_by)) % get_number_of_rotation_states()
+	rotation = RotationAmount.values()[new_rotation]
+
+	# Update the tiles
+	for i in range(PIECE_ARRAYS[piece_type][new_rotation].size()):
+		for j in range(PIECE_ARRAYS[piece_type][new_rotation][i].size()):
+			if PIECE_ARRAYS[piece_type][new_rotation][i][j] == 1:
+				tiles[i][j].type = tile_type
+				tiles[i][j].state = Tile.State.FALLING
 			else:
-				tile.append(Tile.new(Tile.TileType.EMPTY, Tile.State.EMPTY))
+				tiles[i][j].type = Tile.TileType.EMPTY
+				tiles[i][j].state = Tile.State.EMPTY
