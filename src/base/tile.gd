@@ -2,7 +2,7 @@ extends Node
 
 class_name Tile
 
-enum TILE_TYPE {
+enum TileType {
 	I_PIECE,
 	J_PIECE,
 	L_PIECE,
@@ -15,16 +15,16 @@ enum TILE_TYPE {
 	DISABLED
 }
 
-enum STATE {
+enum State {
 	EMPTY,
 	PLACED,
 	FALLING
 }
 
 
-var type: TILE_TYPE
-var state: STATE
+var type: TileType
+var state: State
 
-func _init(tile_type: TILE_TYPE, tile_state: STATE):
+func _init(tile_type: TileType, tile_state: State):
 	type = tile_type
 	state = tile_state

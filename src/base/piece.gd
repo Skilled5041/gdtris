@@ -179,7 +179,7 @@ func get_number_of_rotation_states(piece: Pieces) -> int:
     return NUMBER_OF_ROTATION_STATES[piece]
 
 var piece_type: Pieces
-var tile_type: Tile.TILE_TYPE
+var tile_type: Tile.TileType
 var tiles: Array[Array]
 var rotation: RotationState = RotationState.ZERO_DEGREES
 
@@ -187,28 +187,28 @@ func _init(piece: Pieces):
     piece_type = piece
     match piece:
         Pieces.I_PIECE:
-            tile_type = Tile.TILE_TYPE.I_PIECE
+            tile_type = Tile.TileType.I_PIECE
         Pieces.J_PIECE:
-            tile_type = Tile.TILE_TYPE.J_PIECE
+            tile_type = Tile.TileType.J_PIECE
         Pieces.L_PIECE:
-            tile_type = Tile.TILE_TYPE.L_PIECE
+            tile_type = Tile.TileType.L_PIECE
         Pieces.O_PIECE:
-            tile_type = Tile.TILE_TYPE.O_PIECE
+            tile_type = Tile.TileType.O_PIECE
         Pieces.S_PIECE:
-            tile_type = Tile.TILE_TYPE.S_PIECE
+            tile_type = Tile.TileType.S_PIECE
         Pieces.T_PIECE:
-            tile_type = Tile.TILE_TYPE.T_PIECE
+            tile_type = Tile.TileType.T_PIECE
         Pieces.Z_PIECE:
-            tile_type = Tile.TILE_TYPE.Z_PIECE
+            tile_type = Tile.TileType.Z_PIECE
 
     tiles = []
     for row in PIECE_ARRAYS[piece][0]:
         tiles.append([])
         for tile in row:
             if tile == 1:
-                tile.append(Tile.new(tile_type, Tile.STATE.FALLING))
+                tile.append(Tile.new(tile_type, Tile.State.FALLING))
             else:
-                tile.append(Tile.new(Tile.TILE_TYPE.EMPTY, Tile.STATE.EMPTY))
+                tile.append(Tile.new(Tile.TileType.EMPTY, Tile.State.EMPTY))
 
 func set_rotation(new_rotation: RotationState):
     if rotation == new_rotation:
@@ -218,6 +218,6 @@ func set_rotation(new_rotation: RotationState):
     for row in PIECE_ARRAYS[piece_type][rotation]:
         for tile in row:
             if tile == 1:
-                tile.append(Tile.new(tile_type, Tile.STATE.FALLING))
+                tile.append(Tile.new(tile_type, Tile.State.FALLING))
             else:
-                tile.append(Tile.new(Tile.TILE_TYPE.EMPTY, Tile.STATE.EMPTY))
+                tile.append(Tile.new(Tile.TileType.EMPTY, Tile.State.EMPTY))
