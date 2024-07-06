@@ -2,9 +2,9 @@ extends Node
 
 class_name Game
 
-# TODO: add config options for this
+# TODO: add config options for this nad maybe move to different file
 var auto_repeat_rate: int = 0
-var delayed_auto_shift: int = 100
+var delayed_auto_shift: int = 125
 var soft_drop_factor: float = 0
 
 var soft_dropping: bool = false
@@ -46,8 +46,7 @@ var number_of_lines_cleared: int = 0
 var gravity_fall_delay: int = int(1000 / gravity)
 
 # Pieces locks after 0.5s on the ground
-# How long the piece has been on the ground in ms
-var drop_lock_time = 0
+var drop_lock_time_begin = -1
 const DROP_LOCK_DELAY = 500
 
 var game_started: bool = false
@@ -68,8 +67,9 @@ func get_piece_from_bag():
 	var piece = Piece.new(bag_1.pop_front())
 	bag_1.push_back(bag_2.pop_front())
 
+	# TODO: Fix 7 bag system
 	if bag_2.is_empty():
-		# Add a pieces to bag 2 and shuffle
+		# Add pieces to bag 2 and shuffle
 		var random_values: Array[int] = []
 		for i in range(0, 7):
 			random_values.push_back(i)
@@ -77,6 +77,9 @@ func get_piece_from_bag():
 
 		for value in random_values:
 			bag_2.push_back(Piece.Pieces.values()[value])
+		
+		for x in bag_2:
+			print(x)
 
 	return piece
 
@@ -206,6 +209,7 @@ func _init():
 	for value in random_values:
 		bag_1.push_back(Piece.Pieces.values()[value])
 
+	random_values.clear()
 	# Add a pieces to bag 2 and shuffle
 	for i in range(0, 7):
 		random_values.push_back(i)
@@ -213,6 +217,7 @@ func _init():
 
 	for value in random_values:
 		bag_2.push_back(Piece.Pieces.values()[value])
+
 
 	# Fill the queue with 5 pieces
 	for i in range(5):
@@ -347,12 +352,11 @@ func move_piece(move_direction: MoveDirections):
 		board[point.x][point.y].type = current_piece.tile_type
 		board[point.x][point.y].state = Tile.State.FALLING
 
-	drop_lock_time = 0
 	drop_lock_reset_count += 1
 
 	if (!try_to_move_piece(MoveDirections.DOWN).is_empty()):
 		# If it can move down, reset the lock delay
-		drop_lock_time = 0
+		drop_lock_reset_count = 0
 
 # 1 for clockwise, 2 for 180, 3 for counterclockwise
 func calculate_rotation(rotations: Piece.RotationAmount):
@@ -451,9 +455,8 @@ func rotate_piece(rotations: Piece.RotationAmount):
 		board[point.x][point.y].type = current_piece.tile_type
 		board[point.x][point.y].state = Tile.State.FALLING
 
-	drop_lock_time = 0
 	drop_lock_reset_count += 1
 
 	# Reset the drop lock if the piece can move down
 	if (!try_to_move_piece(MoveDirections.DOWN).is_empty()):
-		drop_lock_time = 0
+		drop_lock_reset_count = 0
