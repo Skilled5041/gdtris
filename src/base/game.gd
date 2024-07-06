@@ -77,9 +77,6 @@ func get_piece_from_bag():
 
 		for value in random_values:
 			bag_2.push_back(Piece.Pieces.values()[value])
-		
-		for x in bag_2:
-			print(x)
 
 	return piece
 
@@ -354,6 +351,9 @@ func move_piece(move_direction: MoveDirections):
 
 	drop_lock_reset_count += 1
 
+	if (drop_lock_reset_count < 15):
+		drop_lock_time_begin = -1
+
 	if (!try_to_move_piece(MoveDirections.DOWN).is_empty()):
 		# If it can move down, reset the lock delay
 		drop_lock_reset_count = 0
@@ -457,6 +457,7 @@ func rotate_piece(rotations: Piece.RotationAmount):
 
 	drop_lock_reset_count += 1
 
-	# Reset the drop lock if the piece can move down
-	if (!try_to_move_piece(MoveDirections.DOWN).is_empty()):
-		drop_lock_reset_count = 0
+	if (drop_lock_reset_count < 15):
+		drop_lock_time_begin = -1
+	elif (drop_lock_reset_count >= 15 && kick.y != 0):
+		hard_drop()

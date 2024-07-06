@@ -1,6 +1,70 @@
-[gd_scene load_steps=2 format=3 uid="uid://d3s4n580ym5f"]
+[gd_scene load_steps=8 format=3 uid="uid://d3s4n580ym5f"]
 
 [ext_resource type="Script" path="res://graphics.gd" id="1_mpdqx"]
+[ext_resource type="Shader" path="res://postprocessing.gdshader" id="1_n607b"]
+[ext_resource type="Texture2D" uid="uid://b32p4pmwe6f6e" path="res://assets/bg.jpg" id="2_o7cyx"]
+[ext_resource type="Texture2D" uid="uid://bwhva0w2m1tn6" path="res://assets/tiles.png" id="4_4xx1y"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0olmr"]
+shader = ExtResource("1_n607b")
+shader_parameter/r_displacement = Vector2(3, 0)
+shader_parameter/g_displacement = Vector2(0, 0)
+shader_parameter/b_displacement = Vector2(-3, 0)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_kyg3g"]
+texture = ExtResource("4_4xx1y")
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+7:0/0 = 0
+8:0/0 = 0
+9:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_yxb1e"]
+sources/0 = SubResource("TileSetAtlasSource_kyg3g")
 
 [node name="Node2D" type="Node2D"]
+
+[node name="CanvasLayer2" type="CanvasLayer" parent="."]
+layer = -1
+follow_viewport_enabled = true
+
+[node name="DimBg" type="ColorRect" parent="CanvasLayer2"]
+z_index = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.27451)
+
+[node name="TextureRect" type="TextureRect" parent="CanvasLayer2"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_o7cyx")
+stretch_mode = 6
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+visible = false
+
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer"]
+material = SubResource("ShaderMaterial_0olmr")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GameGraphics" type="Node2D" parent="."]
 script = ExtResource("1_mpdqx")
+
+[node name="TileMap" type="TileMap" parent="."]
+tile_set = SubResource("TileSet_yxb1e")
+format = 2
