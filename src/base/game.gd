@@ -174,7 +174,7 @@ func show_ghost(ghost_coords: Array[Vector2]):
 		return
 	
 	for point in ghost_coords:
-		if point.y < 4:
+		if point.y < 4 || board[point.x][point.y].state != Tile.State.EMPTY:
 			continue
 		if board[point.x][point.y].state != Tile.State.EMPTY:
 			continue
@@ -230,9 +230,11 @@ func place_piece():
 
 	# Move the rows down
 	number_of_lines_cleared += rows.size()
+	
 	var max_value = -1
-	if rows.size() > 0:
-		max_value = max(rows)
+	if (!rows.is_empty()):
+		for row in rows:
+			max_value = max(max_value, row)
 
 	if max_value != -1:
 		move_rows_down(max_value, highest_piece_row, rows)
@@ -378,9 +380,9 @@ func calculate_rotation(rotations: Piece.RotationAmount):
 	# Try each kick
 	for kick in kicks:
 		var can_rotate = true
-		for i in range(current_piece.tiles.size()):
-			for j in range(current_piece.tiles[i].size()):
-				if current_piece.tiles[i][j].state == Tile.State.FALLING:
+		for i in range(rotated_piece.tiles.size()):
+			for j in range(rotated_piece.tiles[i].size()):
+				if rotated_piece.tiles[i][j].state == Tile.State.FALLING:
 					var break_outer = false
 					
 					# If out of bounds
@@ -438,12 +440,16 @@ func rotate_piece(rotations: Piece.RotationAmount):
 
 	# Remove the ghost
 	for point in ghost_coordinates:
-		if board[point.x][point.y].state == Tile.TileType.GHOST:
-			board[point.x][point.y].type = Tile.TileType.EMPTY
+		board[point.x][point.y].state = Tile.State.EMPTY
+		board[point.x][point.y].type = Tile.TileType.EMPTY
 
 	# Update the ghost
 	ghost_coordinates = calculate_drop_position()
 	show_ghost(ghost_coordinates)
+
+	for point in current_piece_coordinates:
+		board[point.x][point.y].type = current_piece.tile_type
+		board[point.x][point.y].state = Tile.State.FALLING
 
 	drop_lock_time = 0
 	drop_lock_reset_count += 1
