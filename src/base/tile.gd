@@ -11,8 +11,9 @@ enum TileType {
 	T_PIECE,
 	Z_PIECE,
 	GHOST,
+	GARBAGE,
+	DISABLED,
 	EMPTY,
-	DISABLED
 }
 
 enum State {

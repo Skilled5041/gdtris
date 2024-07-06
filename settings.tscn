@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://d3oql280etdrd"]
+
+[ext_resource type="Script" path="res://settings.gd" id="1_cm03t"]
+[ext_resource type="Script" path="res://src/settings/positive_int_input.gd" id="1_wos0b"]
+
+[node name="Settings" type="Node2D"]
+script = ExtResource("1_cm03t")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+color = Color(0.125911, 0.125911, 0.125911, 1)
+
+[node name="LineEdit" type="LineEdit" parent="."]
+offset_left = 515.0
+offset_top = 233.0
+offset_right = 582.062
+offset_bottom = 264.0
+text = "100"
+script = ExtResource("1_wos0b")

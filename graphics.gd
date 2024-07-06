@@ -3,6 +3,7 @@ extends Node2D
 var game: Game
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	get_tree().get_root().size_changed.connect(on_window_resize) 
 	window_size = get_viewport_rect().size
 	window_center = window_size / 2
 	tile_size = window_size.y / 30
@@ -21,6 +22,9 @@ var last_gravity_time = -1
 var direction_held_first = ""
 
 func _input(event):	
+	if event.is_action_pressed("open_settings"):
+		get_tree().change_scene_to_file("res://settings.tscn")
+	
 	# If space is pressed, hard drop the piece
 	if event.is_action_pressed("hard_drop"):
 		game.hard_drop()
@@ -114,7 +118,7 @@ var window_center
 var tile_size
 var grid_start
 
-func _on_viewport_resize():
+func on_window_resize():
 	window_size = get_viewport_rect().size
 	window_center = window_size / 2
 	tile_size = window_size.y / 30
@@ -143,6 +147,8 @@ func draw_tile(tile: Tile.TileType, x: int, y: int):
 	else:
 		draw_texture_rect_region(tile_map_texture, src_region, dest_region)
 
+var hud_font: Font = load("res://assets/JetBrainsMono-SemiBold.ttf")
+
 func _draw():
 	if (game.game_started):
 		# Draw grid background
@@ -158,22 +164,32 @@ func _draw():
 			for j in range(0, 24):
 				draw_tile(game.board[i][j].type, i * tile_size + grid_start.x, j * tile_size + grid_start.y)
 
+		# Draw Hold HUD text
+		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size("HOLD", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 5 * tile_size), "HOLD", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size)
+
 		if (game.hold_piece != null):
 			# Draw hold piece
 			for i in range(game.hold_piece.tiles.size()):
 				for j in range(game.hold_piece.tiles[i].size()):
 					if game.hold_piece.tiles[i][j].type != Tile.TileType.EMPTY:
 						if (game.already_held):
-							draw_rect(Rect2(j * tile_size + 300, i * tile_size + 200, tile_size, tile_size), Color(0.5, 0.5, 0.5, 1))
+							draw_tile(Tile.TileType.GARBAGE, j * tile_size + grid_start.x - 5 * tile_size, i * tile_size + grid_start.y + 6 * tile_size)
 						else:
-							draw_rect(Rect2(j * tile_size + 300, i * tile_size + 200, tile_size, tile_size), COLORS[game.hold_piece.tiles[i][j].type])
+							draw_tile(game.hold_piece.tiles[i][j].type, j * tile_size + grid_start.x - 5 * tile_size, i * tile_size + grid_start.y + 6 * tile_size)
+		
+		# Draw Queue Text HUD
+		draw_string(hud_font, Vector2(grid_start.x + 11 * tile_size, grid_start.y + 5 * tile_size), "QUEUE", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size)
 
 		# Queue
 		for i in range(game.piece_queue.size()):
 			for j in range(game.piece_queue[i].tiles.size()):
 				for k in range(game.piece_queue[i].tiles[j].size()):
 					if game.piece_queue[i].tiles[j][k].type != Tile.TileType.EMPTY:
-						draw_rect(Rect2(k * tile_size + 600, j * tile_size + 200 + i * 60, tile_size, tile_size), COLORS[game.piece_queue[i].tiles[j][k].type])
+						draw_tile(game.piece_queue[i].tiles[j][k].type, k * tile_size + grid_start.x + 11 * tile_size, j * tile_size + grid_start.y + 6 * tile_size + i * 3 * tile_size)
+
+		# Lines cleared HUD
+		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size("QUEUE", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 20 * tile_size), "LINES", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size, Color(1, 1, 1, 1), HORIZONTAL_ALIGNMENT_RIGHT)
+		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size(str(game.number_of_lines_cleared), HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 22 * tile_size), str(game.number_of_lines_cleared), HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size, Color(1, 1, 1, 1), HORIZONTAL_ALIGNMENT_RIGHT)
 
 
 func handle_left_das():
