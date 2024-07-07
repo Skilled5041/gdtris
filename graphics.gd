@@ -53,9 +53,9 @@ func _input(event):
 	
 	# If space is pressed, hard drop the piece
 	if event.is_action_pressed("hard_drop"):
-		var rows_cleared = game.hard_drop()
-		if (!rows_cleared.is_empty()):
-			for i in range(0, rows_cleared.size()):
+		var clear_info = game.hard_drop()
+		if (!clear_info["lines_cleared"].is_empty()):
+			for i in range(0, clear_info["lines_cleared"].size()):
 				var particle = GPUParticles2D.new()
 				var process_material = ParticleProcessMaterial.new()
 
@@ -72,13 +72,54 @@ func _input(event):
 				add_child(particle)
 				particle.process_material = process_material
 				particle.texture = tile_textures[7]
-				particle.position = Vector2(grid_start.x + tile_size * 5, grid_start.y + rows_cleared[i] * tile_size + tile_size / 2)
+				particle.position = Vector2(grid_start.x + tile_size * 5, grid_start.y + clear_info["lines_cleared"][i] * tile_size + tile_size / 2)
 				particle.amount = 12
 				particle.lifetime = 0.5
 				particle.one_shot = true 
 				particle.explosiveness = 0.75
 				particle.finished.connect(queue_free)
 				particle.emitting = true
+
+		if clear_info["is_perfect_clear"]:
+			var perfect_clear_label = Label.new()
+			perfect_clear_label.text = "PERFECT CLEAR"
+			perfect_clear_label.horizontal_alignment = HorizontalAlignment.HORIZONTAL_ALIGNMENT_CENTER
+			
+			var mat = ShaderMaterial.new()
+			mat.shader = load("res://rainbow.gdshader")
+			mat.set_shader_parameter("size", Vector2(tile_size * 40, 1))
+			
+			perfect_clear_label.material = mat
+			perfect_clear_label.add_theme_font_size_override("font_size", tile_size * 1.2)
+
+			perfect_clear_label.position = Vector2(grid_start.x, grid_start.y + 12 * tile_size)
+			perfect_clear_label.pivot_offset = Vector2(tile_size * 5, tile_size)
+			perfect_clear_label.size = Vector2(tile_size * 10, tile_size * 2)
+
+			get_viewport().get_window().connect("size_changed", func():
+				mat.set_shader_parameter("size", Vector2(tile_size * 40, 1))
+				perfect_clear_label.material = mat
+				perfect_clear_label.add_theme_font_size_override("font_size", tile_size * 1.2)
+				perfect_clear_label.position = Vector2(grid_start.x, grid_start.y + 12 * tile_size)
+				perfect_clear_label.pivot_offset = perfect_clear_label.size / 2
+				perfect_clear_label.size = Vector2(tile_size * 10, tile_size * 2)
+			)
+
+			var tween = create_tween()
+			tween.set_parallel(true)
+			tween.tween_property(perfect_clear_label, "rotation_degrees", 360, 1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+			tween.tween_property(perfect_clear_label, "scale", Vector2(0, 0), 1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+			
+			var timer = Timer.new()
+			timer.set_wait_time(2)
+			timer.connect("timeout", func():
+				perfect_clear_label.queue_free()
+				# tween.queue_free()
+				timer.queue_free()
+			)
+
+			add_sibling(perfect_clear_label)
+			add_child(timer)
 		
 	elif event.is_action_pressed("move_left"):
 		game.move_piece(Game.MoveDirections.LEFT)
@@ -106,6 +147,7 @@ func _input(event):
 	elif event.is_action_pressed("restart"):
 		game.restart()
 		time_elapsed = 0
+		last_gravity_time = -1
 		
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.

@@ -1,5 +1,3 @@
-extends Node
-
 class_name Game
 
 var soft_dropping: bool = false
@@ -266,7 +264,7 @@ func _init():
 	spawn_new_piece_from_bag()
 	game_started = true
 
-func place_piece() -> Array[int]:
+func place_piece() -> Dictionary:
 	already_held = false
 
 	for point in current_piece_coordinates:
@@ -289,7 +287,17 @@ func place_piece() -> Array[int]:
 
 	spawn_new_piece_from_bag()
 
-	return rows
+	var is_perfect_clear = true
+	for i in range(10):
+		for j in range(highest_piece_row, 24):
+			if board[i][j].state == Tile.State.PLACED:
+				is_perfect_clear = false
+				break
+
+	return {
+		"lines_cleared": rows,
+		"is_perfect_clear": is_perfect_clear
+	}
 
 func clear_lines():
 	# Store all rows that might be full

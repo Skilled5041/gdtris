@@ -1,9 +1,10 @@
-[gd_scene load_steps=13 format=3 uid="uid://d3s4n580ym5f"]
+[gd_scene load_steps=15 format=3 uid="uid://d3s4n580ym5f"]
 
 [ext_resource type="Script" path="res://graphics.gd" id="1_mpdqx"]
 [ext_resource type="Shader" path="res://postprocessing.gdshader" id="1_n607b"]
 [ext_resource type="Texture2D" uid="uid://b32p4pmwe6f6e" path="res://assets/bg.jpg" id="2_o7cyx"]
 [ext_resource type="Texture2D" uid="uid://bwhva0w2m1tn6" path="res://assets/tiles.png" id="4_4xx1y"]
+[ext_resource type="Shader" path="res://rainbow.gdshader" id="5_xiwle"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_0olmr"]
 shader = ExtResource("1_n607b")
@@ -50,6 +51,10 @@ gravity = Vector3(0, 98, 0)
 scale_curve = SubResource("CurveTexture_sxjol")
 color_ramp = SubResource("GradientTexture1D_0kgtw")
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_q10xd"]
+shader = ExtResource("5_xiwle")
+shader_parameter/size = Vector2(200, 1)
+
 [node name="Node2D" type="Node2D"]
 
 [node name="CanvasLayer2" type="CanvasLayer" parent="."]
@@ -75,6 +80,7 @@ texture = ExtResource("2_o7cyx")
 stretch_mode = 6
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
+visible = false
 
 [node name="ColorRect" type="ColorRect" parent="CanvasLayer"]
 material = SubResource("ShaderMaterial_0olmr")
@@ -98,3 +104,11 @@ amount = 50
 process_material = SubResource("ParticleProcessMaterial_qmbqh")
 texture = ExtResource("4_4xx1y")
 fixed_fps = 60
+
+[node name="Label" type="Label" parent="."]
+visible = false
+material = SubResource("ShaderMaterial_q10xd")
+offset_right = 230.0
+offset_bottom = 23.0
+text = "PERFECT CLEAR"
+horizontal_alignment = 1
