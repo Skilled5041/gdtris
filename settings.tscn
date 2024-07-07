@@ -1,18 +1,69 @@
-[gd_scene load_steps=3 format=3 uid="uid://d3oql280etdrd"]
+[gd_scene load_steps=8 format=3 uid="uid://d3oql280etdrd"]
 
 [ext_resource type="Script" path="res://settings.gd" id="1_cm03t"]
-[ext_resource type="Script" path="res://src/settings/positive_int_input.gd" id="1_wos0b"]
+[ext_resource type="Script" path="res://src/settings/das_input.gd" id="2_ip7sr"]
+[ext_resource type="Script" path="res://src/settings/arr_input.gd" id="3_mix84"]
+[ext_resource type="Script" path="res://src/settings/sdf_input.gd" id="4_nn5wx"]
+[ext_resource type="Script" path="res://DasLabel.gd" id="5_vwxpb"]
+[ext_resource type="Script" path="res://ArrLabel.gd" id="6_c6246"]
+[ext_resource type="Script" path="res://SdfLabel.gd" id="7_chkq2"]
 
 [node name="Settings" type="Node2D"]
 script = ExtResource("1_cm03t")
 
-[node name="ColorRect" type="ColorRect" parent="."]
-color = Color(0.125911, 0.125911, 0.125911, 1)
+[node name="CanvasLayer2" type="CanvasLayer" parent="."]
 
-[node name="LineEdit" type="LineEdit" parent="."]
-offset_left = 515.0
-offset_top = 233.0
-offset_right = 582.062
-offset_bottom = 264.0
+[node name="DasField" type="LineEdit" parent="CanvasLayer2"]
+offset_top = 110.0
+offset_right = 67.0625
+offset_bottom = 141.0
 text = "100"
-script = ExtResource("1_wos0b")
+script = ExtResource("2_ip7sr")
+
+[node name="ArrField" type="LineEdit" parent="CanvasLayer2"]
+offset_top = 30.0
+offset_right = 67.0625
+offset_bottom = 61.0
+text = "100"
+script = ExtResource("3_mix84")
+
+[node name="SdfField" type="LineEdit" parent="CanvasLayer2"]
+offset_top = 190.0
+offset_right = 67.0625
+offset_bottom = 221.0
+text = "100"
+script = ExtResource("4_nn5wx")
+
+[node name="DasLabel" type="RichTextLabel" parent="CanvasLayer2"]
+offset_top = 80.0
+offset_right = 40.0
+offset_bottom = 120.0
+tooltip_text = "Delayed auto shift. The delay in millseconds until the pieces move when holding down the left and right controls."
+text = "DAS"
+script = ExtResource("5_vwxpb")
+
+[node name="ArrLabel" type="RichTextLabel" parent="CanvasLayer2"]
+offset_right = 40.0
+offset_bottom = 40.0
+tooltip_text = "Auto repeat rate. The delay in milliseconds for how often a piece moves left and right when holding down the left and right controls. Set to 0 to move instantly to the edges."
+text = "ARR"
+script = ExtResource("6_c6246")
+
+[node name="SdfLabel" type="RichTextLabel" parent="CanvasLayer2"]
+offset_top = 160.0
+offset_right = 40.0
+offset_bottom = 200.0
+tooltip_text = "Soft drop factor. How fast a piece falls when holding down the soft drop key. Set to 0 to instantly drop to the ground."
+text = "SDF"
+script = ExtResource("7_chkq2")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.29219, 0.29219, 0.29219, 1)

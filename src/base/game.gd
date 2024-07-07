@@ -2,11 +2,6 @@ extends Node
 
 class_name Game
 
-# TODO: add config options for this nad maybe move to different file
-var auto_repeat_rate: int = 0
-var delayed_auto_shift: int = 125
-var soft_drop_factor: float = 0
-
 var soft_dropping: bool = false
 
 enum MoveDirections {
@@ -37,13 +32,10 @@ var highest_piece_row: int
 var bag_1: Array[Piece.Pieces]
 var bag_2: Array[Piece.Pieces]
 
-# Number of rows per second a piece falls
-var gravity: float = 1
-
 var number_of_lines_cleared: int = 0
 
 # How often a piece falls in milliseconds
-var gravity_fall_delay: int = int(1000 / gravity)
+var gravity_fall_delay: int = 1000
 
 # Pieces locks after 0.5s on the ground
 var drop_lock_time_begin = -1
@@ -63,11 +55,62 @@ var alive = true
 
 var board: Array[Array]
 
+func restart():
+	# Initialize the board and other variables
+	# Game is 10 x 24
+	for i in range(10):
+		for j in range(24):
+			board[i][j].state = Tile.State.EMPTY
+			board[i][j].type = Tile.TileType.EMPTY
+
+	piece_queue.clear()
+	current_piece_coordinates.clear()
+	ghost_coordinates.clear()
+	highest_piece_row = 24
+
+	# Initialize the bags
+	bag_1.clear()
+	bag_2.clear()
+
+	# Add a pieces to bag 1 and shuffle
+	var random_values: Array[int] = []
+	for i in range(0, 7):
+		random_values.push_back(i)
+	random_values.shuffle()
+
+	for value in random_values:
+		bag_1.push_back(Piece.Pieces.values()[value])
+
+	random_values.clear()
+	# Add a pieces to bag 2 and shuffle
+	for i in range(0, 7):
+		random_values.push_back(i)
+	random_values.shuffle()
+
+	for value in random_values:
+		bag_2.push_back(Piece.Pieces.values()[value])
+
+	# Fill the queue with 5 pieces
+	for i in range(5):
+		piece_queue.push_back(get_piece_from_bag())
+
+	hold_piece = null
+	already_held = false
+	number_of_lines_cleared = 0
+	gravity_fall_delay = 1000
+	drop_lock_time_begin = -1
+	game_ended = false
+	drop_lock_reset_count = 0
+	combo = 0
+	alive = true
+
+	spawn_new_piece_from_bag()
+	game_started = true
+
 func get_piece_from_bag():
 	var piece = Piece.new(bag_1.pop_front())
 	bag_1.push_back(bag_2.pop_front())
 
-	# TODO: Fix 7 bag system
 	if bag_2.is_empty():
 		# Add pieces to bag 2 and shuffle
 		var random_values: Array[int] = []
@@ -220,7 +263,10 @@ func _init():
 	for i in range(5):
 		piece_queue.push_back(get_piece_from_bag())
 
-func place_piece():
+	spawn_new_piece_from_bag()
+	game_started = true
+
+func place_piece() -> Array[int]:
 	already_held = false
 
 	for point in current_piece_coordinates:
@@ -242,6 +288,8 @@ func place_piece():
 		move_rows_down(max_value, highest_piece_row, rows)
 
 	spawn_new_piece_from_bag()
+
+	return rows
 
 func clear_lines():
 	# Store all rows that might be full
@@ -293,7 +341,7 @@ func hard_drop():
 		board[point.x][point.y].type = current_piece.tile_type
 		board[point.x][point.y].state = Tile.State.FALLING
 
-	place_piece()
+	return place_piece()
 
 func try_to_move_piece(direction: MoveDirections):
 	# X+ is right, Y+ is down

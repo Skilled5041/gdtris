@@ -1,6 +1,9 @@
 extends Node2D
 
+class_name MainGame
+
 var game: Game
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	get_tree().get_root().size_changed.connect(on_window_resize) 
@@ -8,10 +11,9 @@ func _ready():
 	window_center = window_size / 2
 	tile_size = window_size.y / 30
 	grid_start = Vector2(window_center.x - 5 * tile_size - tile_size / 2, window_center.y - 12 * tile_size - tile_size / 2)
+	GameConfig.create()
 
 	game = Game.new()
-	game.spawn_new_piece_from_bag()
-	game.game_started = true
 
 var time_elapsed = 0
 var last_das_time = -1
@@ -21,42 +23,57 @@ var last_gravity_time = -1
 
 var direction_held_first = ""
 
+# TODO: Implement input remapping
 func _input(event):	
 	if event.is_action_pressed("open_settings"):
 		get_tree().change_scene_to_file("res://settings.tscn")
 	
 	# If space is pressed, hard drop the piece
 	if event.is_action_pressed("hard_drop"):
-		game.hard_drop()
-		queue_redraw()
+		var rows_cleared = game.hard_drop()
+		if (!rows_cleared.is_empty()):
+			for i in range(0, rows_cleared.size()):
+				var particle = GPUParticles2D.new()
+				add_child(particle)
+				particle.texture = tile_map_texture
+				particle.amount = 10
+				particle.lifetime = 0.5
+				particle.one_shot = true
+				particle.explosiveness = 0.5
+				particle.emitting = true
+		
 	elif event.is_action_pressed("move_left"):
 		game.move_piece(Game.MoveDirections.LEFT)
-		queue_redraw()
+		
 	elif event.is_action_pressed("move_right"):
 		game.move_piece(Game.MoveDirections.RIGHT)
-		queue_redraw()
+		
 	elif event.is_action_pressed("soft_drop"):
-		if (game.soft_drop_factor == 0):
+		if (GameConfig.get_setting("handling", "sdf") == 0):
 			for i in range(0, 20):
 				game.move_piece(Game.MoveDirections.DOWN)
 		game.move_piece(Game.MoveDirections.DOWN)
-		queue_redraw()
+		
 	elif event.is_action_pressed("rotate_cw"):
 		game.rotate_piece(Piece.RotationAmount.NINETY_DEGREES)
-		queue_redraw()
+		
 	elif event.is_action_pressed("rotate_ccw"):
 		game.rotate_piece(Piece.RotationAmount.TWO_HUNDRED_SEVENTY_DEGREES)
-		queue_redraw()
+		
 	elif event.is_action_pressed("rotate_180"):
 		game.rotate_piece(Piece.RotationAmount.ONE_HUNDRED_EIGHTY_DEGREES)
-		queue_redraw()
+		
 	elif event.is_action_pressed("hold"):
 		game.hold()
-		queue_redraw()
+	elif event.is_action_pressed("restart"):
+		game.restart()
+		time_elapsed = 0
+		
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	time_elapsed += delta
+	game.gravity_fall_delay = 1000 / (0.2 * game.number_of_lines_cleared + 1 + time_elapsed / 30)
 
 	# If piece can't moving down start lock timer
 	if (game.try_to_move_piece(Game.MoveDirections.DOWN).is_empty()):
@@ -65,7 +82,7 @@ func _process(delta):
 		elif (time_elapsed - game.drop_lock_time_begin > game.DROP_LOCK_DELAY / 1000.0):
 			game.hard_drop()
 			game.drop_lock_reset_count = 0
-			queue_redraw()
+			
 	else:
 		game.drop_lock_time_begin = -1
 
@@ -84,10 +101,13 @@ func _process(delta):
 		handle_left_das()
 
 	if Input.is_action_pressed("soft_drop"):
-		if (last_sdf_time != - 1 and time_elapsed - last_sdf_time > game.soft_drop_factor / 1000.0):
+		if GameConfig.get_setting("handling", "sdf") == 0:
+			for i in range(0, 20):
+				game.move_piece(Game.MoveDirections.DOWN)
+		elif (last_sdf_time != - 1 and time_elapsed - last_sdf_time > (game.gravity_fall_delay / 1000.0) / GameConfig.get_setting("handling", "sdf")):
 			game.move_piece(Game.MoveDirections.DOWN)
 			last_sdf_time = time_elapsed
-			queue_redraw()
+			
 		elif last_sdf_time == - 1:
 			last_sdf_time = time_elapsed
 	else:
@@ -96,9 +116,11 @@ func _process(delta):
 	if (last_gravity_time != - 1 and time_elapsed - last_gravity_time > game.gravity_fall_delay / 1000.0):
 		game.move_piece(Game.MoveDirections.DOWN)
 		last_gravity_time = time_elapsed
-		queue_redraw()
+		
 	elif last_gravity_time == -1:
 		last_gravity_time = time_elapsed
+
+	queue_redraw()
 
 const COLORS = {
 	Tile.TileType.I_PIECE: Color(0, 1, 1, 1),
@@ -123,7 +145,7 @@ func on_window_resize():
 	window_center = window_size / 2
 	tile_size = window_size.y / 30
 	grid_start = Vector2(window_center.x - 5 * tile_size - tile_size / 2, window_center.y - 12 * tile_size - tile_size / 2)
-	queue_redraw()
+	
 
 @onready var tile_map: TileMap = $"../TileMap"
 @onready var tile_map_texture: Texture2D = tile_map.tile_set.get_source(0).texture
@@ -188,21 +210,38 @@ func _draw():
 						draw_tile(game.piece_queue[i].tiles[j][k].type, k * tile_size + grid_start.x + 11 * tile_size, j * tile_size + grid_start.y + 6 * tile_size + i * 3 * tile_size)
 
 		# Lines cleared HUD
-		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size("QUEUE", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 20 * tile_size), "LINES", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size, Color(1, 1, 1, 1), HORIZONTAL_ALIGNMENT_RIGHT)
-		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size(str(game.number_of_lines_cleared), HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 22 * tile_size), str(game.number_of_lines_cleared), HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size, Color(1, 1, 1, 1), HORIZONTAL_ALIGNMENT_RIGHT)
+		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size("LINES", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 16 * tile_size), "LINES", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size, Color(1, 1, 1, 1), HORIZONTAL_ALIGNMENT_RIGHT)
+		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size(str(game.number_of_lines_cleared), HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 18 * tile_size), str(game.number_of_lines_cleared), HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size, Color(1, 1, 1, 1), HORIZONTAL_ALIGNMENT_RIGHT)
+
+		# Time HUD
+		# MM:SS.sss if < 1 hour
+		# HH:MM:SS.sss if >= 1 hour
+		var time_string = ""
+		var time_elapsed_seconds = int(time_elapsed)
+		var hours = time_elapsed_seconds / 3600
+		var minutes = (time_elapsed_seconds % 3600) / 60
+		var seconds = time_elapsed_seconds % 60
+		var milliseconds = int((time_elapsed - int(time_elapsed)) * 1000)
+		if (hours > 0):
+			time_string = ("%02d" % hours) + ":" + ("%02d" % minutes) + ":" + ("%02d" % seconds) + "." + ("%-3d" % milliseconds).replace(" ", "0")
+		else:
+			time_string = ("%02d" % minutes) + ":" + ("%02d" % seconds) + "." + ("%-3d" % milliseconds).replace(" ", "0")
+		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size("TIME", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 21 * tile_size), "TIME", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size, Color(1, 1, 1, 1), HORIZONTAL_ALIGNMENT_RIGHT)
+		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size(time_string, HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 23 * tile_size), time_string, HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size, Color(1, 1, 1, 1), HORIZONTAL_ALIGNMENT_RIGHT)
 
 
 func handle_left_das():
 	if Input.is_action_pressed("move_left"):
-		if (last_das_time != - 1 and time_elapsed - last_das_time > game.delayed_auto_shift / 1000.0):
-			if game.auto_repeat_rate == 0:
+		if (last_das_time != - 1 and time_elapsed - last_das_time > GameConfig.get_setting("handling", "das") / 1000.0):
+			# If arr is 0 or das is activated move to the wall
+			if GameConfig.get_setting("handling", "arr") == 0:
 				for i in range(0, 10):
 					game.move_piece(Game.MoveDirections.LEFT)
 			else:
-				if (last_arr_time != - 1 and time_elapsed - last_arr_time > game.auto_repeat_rate / 1000.0):
+				if (last_arr_time != - 1 and time_elapsed - last_arr_time > GameConfig.get_setting("handling", "arr") / 1000.0):
 					game.move_piece(Game.MoveDirections.LEFT)
-					last_arr_time = time_elapsed - (time_elapsed - last_arr_time - game.auto_repeat_rate / 1000.0)
-			queue_redraw()
+					last_arr_time = time_elapsed - (time_elapsed - last_arr_time - GameConfig.get_setting("handling", "arr") / 1000.0)
+			
 		elif last_das_time == - 1:
 			last_das_time = time_elapsed
 		if last_arr_time == - 1:
@@ -214,15 +253,15 @@ func handle_left_das():
 
 func handle_right_das():
 	if Input.is_action_pressed("move_right"):
-		if (last_das_time != - 1 and time_elapsed - last_das_time > game.delayed_auto_shift / 1000.0):
-			if game.auto_repeat_rate == 0:
+		if (last_das_time != - 1 and time_elapsed - last_das_time > GameConfig.get_setting("handling", "das") / 1000.0):
+			if GameConfig.get_setting("handling", "arr") == 0:
 				for i in range(0, 10):
 					game.move_piece(Game.MoveDirections.RIGHT)
 			else:
-				if (last_arr_time != - 1 and time_elapsed - last_arr_time > game.auto_repeat_rate / 1000.0):
+				if (last_arr_time != - 1 and time_elapsed - last_arr_time > GameConfig.get_setting("handling", "arr") / 1000.0):
 					game.move_piece(Game.MoveDirections.RIGHT)
-					last_arr_time = time_elapsed - (time_elapsed - last_arr_time - game.auto_repeat_rate / 1000.0)
-			queue_redraw()
+					last_arr_time = time_elapsed - (time_elapsed - last_arr_time - GameConfig.get_setting("handling", "arr") / 1000.0)
+			
 		elif last_das_time == - 1:
 			last_das_time = time_elapsed
 		if last_arr_time == - 1:

@@ -7,9 +7,8 @@
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_0olmr"]
 shader = ExtResource("1_n607b")
-shader_parameter/r_displacement = Vector2(3, 0)
-shader_parameter/g_displacement = Vector2(0, 0)
-shader_parameter/b_displacement = Vector2(-3, 0)
+shader_parameter/levels = 3
+shader_parameter/spread = 0.01
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_kyg3g"]
 texture = ExtResource("4_4xx1y")
@@ -52,7 +51,6 @@ texture = ExtResource("2_o7cyx")
 stretch_mode = 6
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
-visible = false
 
 [node name="ColorRect" type="ColorRect" parent="CanvasLayer"]
 material = SubResource("ShaderMaterial_0olmr")

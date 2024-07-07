@@ -2,16 +2,25 @@ shader_type canvas_item;
 
 uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_nearest;
 
-uniform vec2 r_displacement = vec2(3.0, 0.0);
-uniform vec2 g_displacement = vec2(0.0, 0.0);
-uniform vec2 b_displacement = vec2(-3.0, 0.0);
+uniform int levels = 3;
+uniform float spread = 0.01;
 
+vec3 chromatic_slice(float t){
+	vec3 res = vec3(1.0-t, 1.0 - abs(t - 1.0), t - 1.0);
+	return max(res, 0.0);
+}
 
-void fragment()
-{
-	float r = texture(screen_texture, SCREEN_UV + vec2(SCREEN_PIXEL_SIZE*r_displacement), 0.0).r;
-	float g = texture(screen_texture, SCREEN_UV + vec2(SCREEN_PIXEL_SIZE*g_displacement), 0.0).g;
-	float b = texture(screen_texture, SCREEN_UV + vec2(SCREEN_PIXEL_SIZE*b_displacement), 0.0).b;
-	
-	COLOR = vec4(r, g, b, 1.0);
+void fragment(){
+	vec3 sum = vec3(0);
+	COLOR.rgb = vec3(0);
+	vec2 offset = (UV - vec2(0.5))*vec2(1,-1);
+	for(int i = 0; i < levels; i++){
+		float t = 2.0*float(i)/float(levels-1); // range 0.0->2.0
+		vec3 slice = vec3(1.0-t, 1.0 - abs(t - 1.0), t - 1.0);
+		slice = max(slice, 0.0);
+		sum += slice;
+		vec2 slice_offset = (t-1.0)*spread*offset;
+		COLOR.rgb += slice * texture(screen_texture, SCREEN_UV + slice_offset).rgb;
+	}
+	COLOR.rgb /= sum;
 }
