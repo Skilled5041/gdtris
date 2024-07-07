@@ -164,8 +164,8 @@ func spawn_new_piece(piece: Piece):
 		for j in range(0, current_piece.tiles.size()):
 			if current_piece.tiles[j][i].state != Tile.State.EMPTY:
 				if board[i + 3][j + 1].state != Tile.State.EMPTY:
-					alive = false
-					game_ended = true
+					restart()
+					MainGame.time_elapsed = 0
 					return
 
 	# Merge the piece into the array

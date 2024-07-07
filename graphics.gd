@@ -13,9 +13,32 @@ func _ready():
 	grid_start = Vector2(window_center.x - 5 * tile_size - tile_size / 2, window_center.y - 12 * tile_size - tile_size / 2)
 	GameConfig.create()
 
+	var atlas = tile_map.tile_set.get_source(0) as TileSetAtlasSource
+	var atlas_image = atlas.texture.get_image()
+	for i in range(0, 10):
+		var tile_image = atlas_image.get_region(atlas.get_tile_texture_region(Vector2i(int(i), 0)))
+		var tile_texture = ImageTexture.create_from_image(tile_image)
+		tile_texture.set_size_override(Vector2i(tile_size, tile_size))
+		tile_textures.append(tile_texture)
+
+	var color_ramp_gradient = Gradient.new()
+	color_ramp_gradient.set_color(0, Color(1, 1, 1, 0.3))
+	color_ramp_gradient.set_color(1, Color(1, 1, 1, 0))
+	color_ramp_gradient_texture = GradientTexture1D.new()
+	color_ramp_gradient_texture.set_gradient(color_ramp_gradient)
+
+	var size_curve = Curve.new()
+	size_curve.add_point(Vector2(0, 0))
+	size_curve.add_point(Vector2(1, 1))
+	size_curve_texture = CurveTexture.new()
+	size_curve_texture.set_curve(size_curve)
+
 	game = Game.new()
 
-var time_elapsed = 0
+var color_ramp_gradient_texture : GradientTexture1D
+var size_curve_texture : CurveTexture
+
+static var time_elapsed = 0
 var last_das_time = -1
 var last_arr_time = -1
 var last_sdf_time = -1
@@ -34,12 +57,27 @@ func _input(event):
 		if (!rows_cleared.is_empty()):
 			for i in range(0, rows_cleared.size()):
 				var particle = GPUParticles2D.new()
+				var process_material = ParticleProcessMaterial.new()
+
+				process_material.particle_flag_disable_z = true
+				process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+				process_material.emission_box_extents = Vector3(6 * tile_size, tile_size / 2, 1)
+				process_material.angle_max = 360
+				process_material.gravity.y = 200
+				process_material.scale_min = 0.5
+				process_material.scale_max = 1
+				process_material.scale_over_velocity_curve = size_curve_texture
+				process_material.color_ramp = color_ramp_gradient_texture
+
 				add_child(particle)
-				particle.texture = tile_map_texture
-				particle.amount = 10
+				particle.process_material = process_material
+				particle.texture = tile_textures[7]
+				particle.position = Vector2(grid_start.x + tile_size * 5, grid_start.y + rows_cleared[i] * tile_size + tile_size / 2)
+				particle.amount = 12
 				particle.lifetime = 0.5
-				particle.one_shot = true
-				particle.explosiveness = 0.5
+				particle.one_shot = true 
+				particle.explosiveness = 0.75
+				particle.finished.connect(queue_free)
 				particle.emitting = true
 		
 	elif event.is_action_pressed("move_left"):
@@ -135,6 +173,8 @@ const COLORS = {
 	Tile.TileType.DISABLED: Color(0.5, 0.5, 0.5, 1)
 }
 
+var tile_textures: Array[Texture] = []
+
 var window_size
 var window_center
 var tile_size
@@ -172,6 +212,8 @@ func draw_tile(tile: Tile.TileType, x: int, y: int):
 var hud_font: Font = load("res://assets/JetBrainsMono-SemiBold.ttf")
 
 func _draw():
+	draw_texture(color_ramp_gradient_texture, Vector2(0, 10))
+
 	if (game.game_started):
 		# Draw grid background
 		draw_rect(Rect2(grid_start.x, grid_start.y + 4 * tile_size, 10 * tile_size, 20 * tile_size), Color(0, 0, 0, 0.5))
