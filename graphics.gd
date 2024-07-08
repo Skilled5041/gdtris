@@ -46,6 +46,7 @@ var last_sdf_time = -1
 static var last_gravity_time = -1
 
 var direction_held_first = ""
+var hard_drop_sound = load("res://assets/hard_drop.wav")
 
 # TODO: Implement input remapping
 func _input(event):	
@@ -54,6 +55,13 @@ func _input(event):
 	
 	# If space is pressed, hard drop the piece
 	if event.is_action_pressed("hard_drop"):
+		# Play sound
+		var sound = AudioStreamPlayer.new()
+		sound.stream = hard_drop_sound
+		add_sibling(sound)
+		sound.play()
+		sound.finished.connect(sound.queue_free)
+
 		var clear_info = game.hard_drop()
 		if (!clear_info["lines_cleared"].is_empty()):
 			for i in range(0, clear_info["lines_cleared"].size()):
@@ -123,9 +131,13 @@ func _input(event):
 		
 	elif event.is_action_pressed("move_left"):
 		game.move_piece(Game.MoveDirections.LEFT)
+		if (direction_held_first == "right"):
+			last_right_das_time += 0.4
 		
 	elif event.is_action_pressed("move_right"):
 		game.move_piece(Game.MoveDirections.RIGHT)
+		if (direction_held_first == "left"):
+			last_left_das_time += 0.4
 		
 	elif event.is_action_pressed("soft_drop"):
 		if (GameConfig.get_setting("handling", "sdf") == 0):
@@ -336,7 +348,9 @@ func handle_left_das():
 	else:
 		last_left_das_time = -1
 		last_arr_time = -1
-		direction_held_first = ""
+		if (direction_held_first == "left"):
+			direction_held_first = ""
+
 
 func handle_right_das():
 	if Input.is_action_pressed("move_right"):
@@ -356,4 +370,5 @@ func handle_right_das():
 	else:
 		last_right_das_time = -1
 		last_arr_time = -1
-		direction_held_first = ""
+		if (direction_held_first == "right"):
+			direction_held_first = ""

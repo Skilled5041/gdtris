@@ -80,7 +80,6 @@ texture = ExtResource("2_o7cyx")
 stretch_mode = 6
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
-visible = false
 
 [node name="ColorRect" type="ColorRect" parent="CanvasLayer"]
 material = SubResource("ShaderMaterial_0olmr")
