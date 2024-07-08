@@ -31,6 +31,7 @@ var bag_1: Array[Piece.Pieces]
 var bag_2: Array[Piece.Pieces]
 
 var number_of_lines_cleared: int = 0
+var pieces_placed: int = 0
 
 # How often a piece falls in milliseconds
 var gravity_fall_delay: int = 1000
@@ -101,6 +102,7 @@ func restart():
 	drop_lock_reset_count = 0
 	combo = 0
 	alive = true
+	pieces_placed = 0
 
 	spawn_new_piece_from_bag()
 	game_started = true
@@ -149,9 +151,9 @@ func hold():
 
 func spawn_new_piece_from_bag():
 	piece_queue.push_back(get_piece_from_bag())
-	spawn_new_piece(piece_queue.pop_front())
+	return spawn_new_piece(piece_queue.pop_front())
 
-func spawn_new_piece(piece: Piece):
+func spawn_new_piece(piece: Piece) -> bool:
 	current_piece = piece
 
 	current_piece_coordinates.clear()
@@ -164,7 +166,7 @@ func spawn_new_piece(piece: Piece):
 				if board[i + 3][j + 1].state != Tile.State.EMPTY:
 					restart()
 					MainGame.time_elapsed = 0
-					return
+					return false
 
 	# Merge the piece into the array
 	for i in range(current_piece.tiles[0].size()):
@@ -176,6 +178,7 @@ func spawn_new_piece(piece: Piece):
 
 	ghost_coordinates = calculate_drop_position()
 	show_ghost(ghost_coordinates)
+	return true
 
 func calculate_drop_position():
 	# Only include the lowest (highest) Y coordinate of each column
@@ -266,6 +269,7 @@ func _init():
 
 func place_piece() -> Dictionary:
 	already_held = false
+	pieces_placed += 1
 
 	for point in current_piece_coordinates:
 		board[point.x][point.y].state = Tile.State.PLACED
@@ -285,7 +289,7 @@ func place_piece() -> Dictionary:
 	if max_value != -1:
 		move_rows_down(max_value, highest_piece_row, rows)
 
-	spawn_new_piece_from_bag()
+	var player_alive = spawn_new_piece_from_bag()
 
 	var is_perfect_clear = true
 	for i in range(10):
@@ -293,6 +297,9 @@ func place_piece() -> Dictionary:
 			if board[i][j].state == Tile.State.PLACED:
 				is_perfect_clear = false
 				break
+
+	if !player_alive:
+		is_perfect_clear = false
 
 	return {
 		"lines_cleared": rows,

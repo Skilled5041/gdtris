@@ -3,6 +3,7 @@ shader_type canvas_item;
 varying vec2 full_uv;
 uniform vec2 size;
 void vertex () {
+  VERTEX.y += sin((VERTEX.x * 10. / size.x + TIME * 8.) * 2.) * size.y * 4.;
   full_uv = VERTEX.xy / size;
 }
 

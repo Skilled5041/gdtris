@@ -61,18 +61,18 @@ func _input(event):
 
 				process_material.particle_flag_disable_z = true
 				process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-				process_material.emission_box_extents = Vector3(6 * tile_size, tile_size / 2, 1)
+				process_material.emission_box_extents = Vector3(6 * tile_size, 1, 1)
 				process_material.angle_max = 360
 				process_material.gravity.y = 200
-				process_material.scale_min = 0.5
-				process_material.scale_max = 1
+				process_material.scale_min = 0.3
+				process_material.scale_max = 0.8
 				process_material.scale_over_velocity_curve = size_curve_texture
 				process_material.color_ramp = color_ramp_gradient_texture
 
 				add_child(particle)
 				particle.process_material = process_material
 				particle.texture = tile_textures[7]
-				particle.position = Vector2(grid_start.x + tile_size * 5, grid_start.y + clear_info["lines_cleared"][i] * tile_size + tile_size / 2)
+				particle.position = Vector2(grid_start.x + tile_size * 5, grid_start.y + clear_info["lines_cleared"][i] * tile_size + tile_size)
 				particle.amount = 12
 				particle.lifetime = 0.5
 				particle.one_shot = true 
@@ -95,6 +95,7 @@ func _input(event):
 			perfect_clear_label.position = Vector2(grid_start.x, grid_start.y + 12 * tile_size)
 			perfect_clear_label.pivot_offset = Vector2(tile_size * 5, tile_size)
 			perfect_clear_label.size = Vector2(tile_size * 10, tile_size * 2)
+			perfect_clear_label.scale = Vector2(0, 0)
 
 			get_viewport().get_window().connect("size_changed", func():
 				mat.set_shader_parameter("size", Vector2(tile_size * 40, 1))
@@ -106,15 +107,13 @@ func _input(event):
 			)
 
 			var tween = create_tween()
-			tween.set_parallel(true)
-			tween.tween_property(perfect_clear_label, "rotation_degrees", 360, 1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-			tween.tween_property(perfect_clear_label, "scale", Vector2(0, 0), 1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+			tween.tween_property(perfect_clear_label, "scale", Vector2(1, 1), 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tween.tween_property(perfect_clear_label, "scale", Vector2(0, 0), 1).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_IN)
 			
 			var timer = Timer.new()
 			timer.set_wait_time(2)
 			timer.connect("timeout", func():
 				perfect_clear_label.queue_free()
-				# tween.queue_free()
 				timer.queue_free()
 			)
 
@@ -313,6 +312,9 @@ func _draw():
 		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size("TIME", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 21 * tile_size), "TIME", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size, Color(1, 1, 1, 1), HORIZONTAL_ALIGNMENT_RIGHT)
 		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size(time_string, HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 23 * tile_size), time_string, HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size, Color(1, 1, 1, 1), HORIZONTAL_ALIGNMENT_RIGHT)
 
+		# Speed HUD
+		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size("SPEED", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 10 * tile_size), "SPEED", HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size, Color(1, 1, 1, 1), HORIZONTAL_ALIGNMENT_RIGHT)
+		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size("%.2f PPS" % (float(game.pieces_placed) / time_elapsed), HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 12 * tile_size), "%.2f PPS" % (float(game.pieces_placed) / time_elapsed), HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size, Color(1, 1, 1, 1), HORIZONTAL_ALIGNMENT_RIGHT)
 
 func handle_left_das():
 	if Input.is_action_pressed("move_left"):
