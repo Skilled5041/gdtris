@@ -39,10 +39,11 @@ var color_ramp_gradient_texture : GradientTexture1D
 var size_curve_texture : CurveTexture
 
 static var time_elapsed = 0
-var last_das_time = -1
+var last_left_das_time = -1
+var last_right_das_time = -1
 var last_arr_time = -1
 var last_sdf_time = -1
-var last_gravity_time = -1
+static var last_gravity_time = -1
 
 var direction_held_first = ""
 
@@ -318,7 +319,7 @@ func _draw():
 
 func handle_left_das():
 	if Input.is_action_pressed("move_left"):
-		if (last_das_time != - 1 and time_elapsed - last_das_time > GameConfig.get_setting("handling", "das") / 1000.0):
+		if (last_left_das_time != - 1 and time_elapsed - last_left_das_time > GameConfig.get_setting("handling", "das") / 1000.0):
 			# If arr is 0 or das is activated move to the wall
 			if GameConfig.get_setting("handling", "arr") == 0:
 				for i in range(0, 10):
@@ -328,18 +329,18 @@ func handle_left_das():
 					game.move_piece(Game.MoveDirections.LEFT)
 					last_arr_time = time_elapsed - (time_elapsed - last_arr_time - GameConfig.get_setting("handling", "arr") / 1000.0)
 			
-		elif last_das_time == - 1:
-			last_das_time = time_elapsed
+		elif last_left_das_time == - 1:
+			last_left_das_time = time_elapsed
 		if last_arr_time == - 1:
 			last_arr_time = time_elapsed
-	elif not Input.is_action_pressed("move_right"):
-		last_das_time = -1
+	else:
+		last_left_das_time = -1
 		last_arr_time = -1
 		direction_held_first = ""
 
 func handle_right_das():
 	if Input.is_action_pressed("move_right"):
-		if (last_das_time != - 1 and time_elapsed - last_das_time > GameConfig.get_setting("handling", "das") / 1000.0):
+		if (last_right_das_time != - 1 and time_elapsed - last_right_das_time > GameConfig.get_setting("handling", "das") / 1000.0):
 			if GameConfig.get_setting("handling", "arr") == 0:
 				for i in range(0, 10):
 					game.move_piece(Game.MoveDirections.RIGHT)
@@ -348,11 +349,11 @@ func handle_right_das():
 					game.move_piece(Game.MoveDirections.RIGHT)
 					last_arr_time = time_elapsed - (time_elapsed - last_arr_time - GameConfig.get_setting("handling", "arr") / 1000.0)
 			
-		elif last_das_time == - 1:
-			last_das_time = time_elapsed
+		elif last_right_das_time == - 1:
+			last_right_das_time = time_elapsed
 		if last_arr_time == - 1:
 			last_arr_time = time_elapsed
-	elif not Input.is_action_pressed("move_left"):
-		last_das_time = -1
+	else:
+		last_right_das_time = -1
 		last_arr_time = -1
 		direction_held_first = ""

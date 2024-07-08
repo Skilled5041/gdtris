@@ -103,6 +103,7 @@ func restart():
 	combo = 0
 	alive = true
 	pieces_placed = 0
+	MainGame.last_gravity_time = -1
 
 	spawn_new_piece_from_bag()
 	game_started = true
