@@ -47,125 +47,145 @@ static var last_gravity_time = -1
 
 var direction_held_first = ""
 var hard_drop_sound = load("res://assets/hard_drop.wav")
+var perfect_clear_sound = load("res://assets/perfect_clear.wav")
+var line_clear_sound = load("res://assets/line_clear.wav")
 
 # TODO: Implement input remapping
 func _input(event):	
-	if event.is_action_pressed("open_settings"):
-		get_tree().change_scene_to_file("res://settings.tscn")
-	
 	# If space is pressed, hard drop the piece
-	if event.is_action_pressed("hard_drop"):
-		# Play sound
-		var sound = AudioStreamPlayer.new()
-		sound.stream = hard_drop_sound
-		add_sibling(sound)
-		sound.play()
-		sound.finished.connect(sound.queue_free)
+	if event is InputEventKey:
+		var just_pressed = event.is_pressed() and not event.is_echo()
 
-		var clear_info = game.hard_drop()
-		if (!clear_info["lines_cleared"].is_empty()):
-			for i in range(0, clear_info["lines_cleared"].size()):
-				var particle = GPUParticles2D.new()
-				var process_material = ParticleProcessMaterial.new()
+		if event.is_action_pressed("settings"):
+			get_tree().change_scene_to_file("res://settings.tscn")
 
-				process_material.particle_flag_disable_z = true
-				process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-				process_material.emission_box_extents = Vector3(6 * tile_size, 1, 1)
-				process_material.angle_max = 360
-				process_material.gravity.y = 200
-				process_material.scale_min = 0.3
-				process_material.scale_max = 0.8
-				process_material.scale_over_velocity_curve = size_curve_texture
-				process_material.color_ramp = color_ramp_gradient_texture
+		if event.keycode == GameConfig.get_setting("controls", "hard_drop") && just_pressed:
+			# Play sound
+			var sound = AudioStreamPlayer.new()
+			sound.stream = hard_drop_sound
+			add_sibling(sound)
+			sound.play()
+			sound.finished.connect(sound.queue_free)
 
-				add_child(particle)
-				particle.process_material = process_material
-				particle.texture = tile_textures[7]
-				particle.position = Vector2(grid_start.x + tile_size * 5, grid_start.y + clear_info["lines_cleared"][i] * tile_size + tile_size)
-				particle.amount = 12
-				particle.lifetime = 0.5
-				particle.one_shot = true 
-				particle.explosiveness = 0.75
-				particle.finished.connect(queue_free)
-				particle.emitting = true
+			var clear_info = game.hard_drop()
+			if (!clear_info["lines_cleared"].is_empty()):
+				# Play line clear sound
+				var line_clear_player = AudioStreamPlayer.new()
+				line_clear_player.stream = line_clear_sound
+				line_clear_player.volume_db = 5
+				add_sibling(line_clear_player)
+				line_clear_player.play()
+				line_clear_player.finished.connect(sound.queue_free)
 
-		if clear_info["is_perfect_clear"]:
-			var perfect_clear_label = Label.new()
-			perfect_clear_label.text = "PERFECT CLEAR"
-			perfect_clear_label.horizontal_alignment = HorizontalAlignment.HORIZONTAL_ALIGNMENT_CENTER
-			
-			var mat = ShaderMaterial.new()
-			mat.shader = load("res://rainbow.gdshader")
-			mat.set_shader_parameter("size", Vector2(tile_size * 40, 1))
-			
-			perfect_clear_label.material = mat
-			perfect_clear_label.add_theme_font_size_override("font_size", tile_size * 1.2)
+				for i in range(0, clear_info["lines_cleared"].size()):
+					var particle = GPUParticles2D.new()
+					var process_material = ParticleProcessMaterial.new()
 
-			perfect_clear_label.position = Vector2(grid_start.x, grid_start.y + 12 * tile_size)
-			perfect_clear_label.pivot_offset = Vector2(tile_size * 5, tile_size)
-			perfect_clear_label.size = Vector2(tile_size * 10, tile_size * 2)
-			perfect_clear_label.scale = Vector2(0, 0)
+					process_material.particle_flag_disable_z = true
+					process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+					process_material.emission_box_extents = Vector3(6 * tile_size, 1, 1)
+					process_material.angle_max = 360
+					process_material.gravity.y = 200
+					process_material.scale_min = 0.3
+					process_material.scale_max = 0.8
+					process_material.scale_over_velocity_curve = size_curve_texture
+					process_material.color_ramp = color_ramp_gradient_texture
 
-			get_viewport().get_window().connect("size_changed", func():
+					add_child(particle)
+					particle.process_material = process_material
+					particle.texture = tile_textures[7]
+					particle.position = Vector2(grid_start.x + tile_size * 5, grid_start.y + clear_info["lines_cleared"][i] * tile_size + tile_size)
+					particle.amount = 12
+					particle.lifetime = 0.5
+					particle.one_shot = true 
+					particle.explosiveness = 0.75
+					particle.finished.connect(queue_free)
+					particle.emitting = true
+
+			if clear_info["is_perfect_clear"]:
+				# Play sound
+				var pc_sound = AudioStreamPlayer.new()
+				pc_sound.stream = perfect_clear_sound
+				pc_sound.volume_db = 5
+				add_sibling(pc_sound)
+				pc_sound.play()
+
+				var perfect_clear_label = Label.new()
+				perfect_clear_label.text = "PERFECT CLEAR"
+				perfect_clear_label.horizontal_alignment = HorizontalAlignment.HORIZONTAL_ALIGNMENT_CENTER
+				
+				var mat = ShaderMaterial.new()
+				mat.shader = load("res://rainbow.gdshader")
 				mat.set_shader_parameter("size", Vector2(tile_size * 40, 1))
+				
 				perfect_clear_label.material = mat
 				perfect_clear_label.add_theme_font_size_override("font_size", tile_size * 1.2)
+
 				perfect_clear_label.position = Vector2(grid_start.x, grid_start.y + 12 * tile_size)
-				perfect_clear_label.pivot_offset = perfect_clear_label.size / 2
+				perfect_clear_label.pivot_offset = Vector2(tile_size * 5, tile_size)
 				perfect_clear_label.size = Vector2(tile_size * 10, tile_size * 2)
-			)
+				perfect_clear_label.scale = Vector2(0, 0)
 
-			var tween = create_tween()
-			tween.tween_property(perfect_clear_label, "scale", Vector2(1, 1), 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			tween.tween_property(perfect_clear_label, "scale", Vector2(0, 0), 1).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_IN)
+				get_viewport().get_window().connect("size_changed", func():
+					mat.set_shader_parameter("size", Vector2(tile_size * 40, 1))
+					perfect_clear_label.material = mat
+					perfect_clear_label.add_theme_font_size_override("font_size", tile_size * 1.2)
+					perfect_clear_label.position = Vector2(grid_start.x, grid_start.y + 12 * tile_size)
+					perfect_clear_label.pivot_offset = perfect_clear_label.size / 2
+					perfect_clear_label.size = Vector2(tile_size * 10, tile_size * 2)
+				)
+
+				var tween = create_tween()
+				tween.tween_property(perfect_clear_label, "scale", Vector2(1, 1), 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+				tween.tween_property(perfect_clear_label, "scale", Vector2(0, 0), 1).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_IN)
+				
+				var timer = Timer.new()
+				timer.set_wait_time(2)
+				timer.connect("timeout", func():
+					perfect_clear_label.queue_free()
+					timer.queue_free()
+				)
+
+				add_sibling(perfect_clear_label)
+				add_child(timer)
 			
-			var timer = Timer.new()
-			timer.set_wait_time(2)
-			timer.connect("timeout", func():
-				perfect_clear_label.queue_free()
-				timer.queue_free()
-			)
-
-			add_sibling(perfect_clear_label)
-			add_child(timer)
-		
-	elif event.is_action_pressed("move_left"):
-		game.move_piece(Game.MoveDirections.LEFT)
-		if (direction_held_first == "right"):
-			last_right_das_time += 0.4
-		
-	elif event.is_action_pressed("move_right"):
-		game.move_piece(Game.MoveDirections.RIGHT)
-		if (direction_held_first == "left"):
-			last_left_das_time += 0.4
-		
-	elif event.is_action_pressed("soft_drop"):
-		if (GameConfig.get_setting("handling", "sdf") == 0):
-			for i in range(0, 20):
-				game.move_piece(Game.MoveDirections.DOWN)
-		game.move_piece(Game.MoveDirections.DOWN)
-		
-	elif event.is_action_pressed("rotate_cw"):
-		game.rotate_piece(Piece.RotationAmount.NINETY_DEGREES)
-		
-	elif event.is_action_pressed("rotate_ccw"):
-		game.rotate_piece(Piece.RotationAmount.TWO_HUNDRED_SEVENTY_DEGREES)
-		
-	elif event.is_action_pressed("rotate_180"):
-		game.rotate_piece(Piece.RotationAmount.ONE_HUNDRED_EIGHTY_DEGREES)
-		
-	elif event.is_action_pressed("hold"):
-		game.hold()
-	elif event.is_action_pressed("restart"):
-		game.restart()
-		time_elapsed = 0
-		last_gravity_time = -1
+		elif event.keycode == GameConfig.get_setting("controls", "left") && just_pressed:
+			game.move_piece(Game.MoveDirections.LEFT)
+			if (direction_held_first == "right"):
+				last_right_das_time += 0.4
+			
+		elif event.keycode == GameConfig.get_setting("controls", "right") && just_pressed:
+			game.move_piece(Game.MoveDirections.RIGHT)
+			if (direction_held_first == "left"):
+				last_left_das_time += 0.4
+			
+		elif event.keycode == GameConfig.get_setting("controls", "soft_drop") && just_pressed:
+			if (GameConfig.get_setting("handling", "sdf") == 0):
+				for i in range(0, 20):
+					game.move_piece(Game.MoveDirections.DOWN)
+			game.move_piece(Game.MoveDirections.DOWN)
+			
+		elif event.keycode == GameConfig.get_setting("controls", "rotate_cw") && just_pressed:
+			game.rotate_piece(Piece.RotationAmount.NINETY_DEGREES)
+			
+		elif event.keycode == GameConfig.get_setting("controls", "rotate_ccw") && just_pressed:
+			game.rotate_piece(Piece.RotationAmount.TWO_HUNDRED_SEVENTY_DEGREES)
+			
+		elif event.keycode == GameConfig.get_setting("controls", "rotate_180") && just_pressed:
+			game.rotate_piece(Piece.RotationAmount.ONE_HUNDRED_EIGHTY_DEGREES)
+			
+		elif event.keycode == GameConfig.get_setting("controls", "hold") && just_pressed:
+			game.hold()
+		elif event.keycode == GameConfig.get_setting("controls", "restart") && just_pressed:
+			game.restart()
+			time_elapsed = 0
+			last_gravity_time = -1
 		
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	time_elapsed += delta
-	game.gravity_fall_delay = 1000 / (0.2 * game.number_of_lines_cleared + 1 + time_elapsed / 30)
+	game.gravity_fall_delay = 1000 / (0.05 * game.number_of_lines_cleared + 1 + time_elapsed / 60)
 
 	# If piece can't moving down start lock timer
 	if (game.try_to_move_piece(Game.MoveDirections.DOWN).is_empty()):
@@ -178,10 +198,11 @@ func _process(delta):
 	else:
 		game.drop_lock_time_begin = -1
 
-	if Input.is_action_pressed("move_left") && direction_held_first == "":
+
+	if Input.is_key_pressed(GameConfig.get_setting("controls", "left")) && direction_held_first == "":
 		direction_held_first = "left"
 		handle_left_das()
-	elif Input.is_action_pressed("move_right") && direction_held_first == "":
+	elif Input.is_key_pressed(GameConfig.get_setting("controls", "right")) && direction_held_first == "":
 		direction_held_first = "right"
 		handle_right_das()
 	
@@ -192,7 +213,7 @@ func _process(delta):
 		handle_right_das()
 		handle_left_das()
 
-	if Input.is_action_pressed("soft_drop"):
+	if Input.is_key_pressed(GameConfig.get_setting("controls", "soft_drop")):
 		if GameConfig.get_setting("handling", "sdf") == 0:
 			for i in range(0, 20):
 				game.move_piece(Game.MoveDirections.DOWN)
@@ -330,7 +351,7 @@ func _draw():
 		draw_string(hud_font, Vector2(grid_start.x - 1 * tile_size - hud_font.get_string_size("%.2f PPS" % (float(game.pieces_placed) / time_elapsed), HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size).x, grid_start.y + 12 * tile_size), "%.2f PPS" % (float(game.pieces_placed) / time_elapsed), HORIZONTAL_ALIGNMENT_LEFT, -1, tile_size, Color(1, 1, 1, 1), HORIZONTAL_ALIGNMENT_RIGHT)
 
 func handle_left_das():
-	if Input.is_action_pressed("move_left"):
+	if Input.is_key_pressed(GameConfig.get_setting("controls", "left")):
 		if (last_left_das_time != - 1 and time_elapsed - last_left_das_time > GameConfig.get_setting("handling", "das") / 1000.0):
 			# If arr is 0 or das is activated move to the wall
 			if GameConfig.get_setting("handling", "arr") == 0:
@@ -353,7 +374,7 @@ func handle_left_das():
 
 
 func handle_right_das():
-	if Input.is_action_pressed("move_right"):
+	if Input.is_key_pressed(GameConfig.get_setting("controls", "right")):
 		if (last_right_das_time != - 1 and time_elapsed - last_right_das_time > GameConfig.get_setting("handling", "das") / 1000.0):
 			if GameConfig.get_setting("handling", "arr") == 0:
 				for i in range(0, 10):
