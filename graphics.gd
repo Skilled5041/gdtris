@@ -183,11 +183,13 @@ func _input(event):
 			
 		elif event.keycode == GameConfig.get_setting("controls", "left")&&just_pressed:
 			game.move_piece(Game.MoveDirections.LEFT)
+			last_arr_time = time_elapsed
 			if (direction_held_first == "right"):
 				last_right_das_time += 0.4
 			
 		elif event.keycode == GameConfig.get_setting("controls", "right")&&just_pressed:
 			game.move_piece(Game.MoveDirections.RIGHT)
+			last_arr_time = time_elapsed
 			if (direction_held_first == "left"):
 				last_left_das_time += 0.4
 			
@@ -395,7 +397,7 @@ func handle_left_das():
 			last_left_das_time = time_elapsed
 		if last_arr_time == - 1:
 			last_arr_time = time_elapsed
-	else:
+	elif not Input.is_key_pressed(GameConfig.get_setting("controls", "right")):
 		last_left_das_time = -1
 		last_arr_time = -1
 		if (direction_held_first == "left"):
@@ -416,7 +418,7 @@ func handle_right_das():
 			last_right_das_time = time_elapsed
 		if last_arr_time == - 1:
 			last_arr_time = time_elapsed
-	else:
+	elif not Input.is_key_pressed(GameConfig.get_setting("controls", "left")):
 		last_right_das_time = -1
 		last_arr_time = -1
 		if (direction_held_first == "right"):

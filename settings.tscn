@@ -58,15 +58,15 @@ script = ExtResource("4_nn5wx")
 offset_top = 80.0
 offset_right = 40.0
 offset_bottom = 120.0
-tooltip_text = "Delayed auto shift. The delay in millseconds until the pieces move when holding down the left and right controls."
-text = "DAS"
+tooltip_text = "Auto repeat rate. The delay in milliseconds for how often a piece moves left and right when holding down the left and right controls. Set to 0 to move instantly to the edges."
+text = "ARR"
 script = ExtResource("5_vwxpb")
 
 [node name="ArrLabel" type="RichTextLabel" parent="CanvasLayer2"]
 offset_right = 40.0
 offset_bottom = 40.0
-tooltip_text = "Auto repeat rate. The delay in milliseconds for how often a piece moves left and right when holding down the left and right controls. Set to 0 to move instantly to the edges."
-text = "ARR"
+tooltip_text = "Delayed auto shift. The delay in millseconds until the pieces move when holding down the left and right controls."
+text = "DAS"
 script = ExtResource("6_c6246")
 
 [node name="SdfLabel" type="RichTextLabel" parent="CanvasLayer2"]
