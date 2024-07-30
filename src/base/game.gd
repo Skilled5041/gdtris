@@ -279,6 +279,11 @@ func place_piece() -> Dictionary:
 	# Try clearing lines
 	var rows: Array[int] = clear_lines()
 
+	if rows.size() > 0:
+		combo += 1
+	else:
+		combo = 0
+
 	# Move the rows down
 	number_of_lines_cleared += rows.size()
 	

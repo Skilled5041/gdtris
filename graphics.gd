@@ -6,7 +6,7 @@ var game: Game
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	get_tree().get_root().size_changed.connect(on_window_resize) 
+	get_tree().get_root().size_changed.connect(on_window_resize)
 	window_size = get_viewport_rect().size
 	window_center = window_size / 2
 	tile_size = window_size.y / 30
@@ -35,8 +35,8 @@ func _ready():
 
 	game = Game.new()
 
-var color_ramp_gradient_texture : GradientTexture1D
-var size_curve_texture : CurveTexture
+var color_ramp_gradient_texture: GradientTexture1D
+var size_curve_texture: CurveTexture
 
 static var time_elapsed = 0
 var last_left_das_time = -1
@@ -49,9 +49,26 @@ var direction_held_first = ""
 var hard_drop_sound = load("res://assets/hard_drop.wav")
 var perfect_clear_sound = load("res://assets/perfect_clear.wav")
 var line_clear_sound = load("res://assets/line_clear.wav")
+var combo_max_sound = load("res://assets/combo_max.wav")
+var combo_sounds = [
+	load("res://assets/combo_1.wav"),
+	load("res://assets/combo_2.wav"),
+	load("res://assets/combo_3.wav"),
+	load("res://assets/combo_4.wav"),
+	load("res://assets/combo_5.wav"),
+	load("res://assets/combo_6.wav"),
+	load("res://assets/combo_7.wav"),
+	load("res://assets/combo_8.wav"),
+	load("res://assets/combo_9.wav"),
+	load("res://assets/combo_10.wav"),
+	load("res://assets/combo_11.wav"),
+	load("res://assets/combo_12.wav"),
+	load("res://assets/combo_13.wav"),
+	load("res://assets/combo_14.wav"),
+]
 
 # TODO: Implement input remapping
-func _input(event):	
+func _input(event):
 	# If space is pressed, hard drop the piece
 	if event is InputEventKey:
 		var just_pressed = event.is_pressed() and not event.is_echo()
@@ -59,7 +76,7 @@ func _input(event):
 		if event.is_action_pressed("settings"):
 			get_tree().change_scene_to_file("res://settings.tscn")
 
-		if event.keycode == GameConfig.get_setting("controls", "hard_drop") && just_pressed:
+		if event.keycode == GameConfig.get_setting("controls", "hard_drop")&&just_pressed:
 			# Play sound
 			var sound = AudioStreamPlayer.new()
 			sound.stream = hard_drop_sound
@@ -76,6 +93,21 @@ func _input(event):
 				add_sibling(line_clear_player)
 				line_clear_player.play()
 				line_clear_player.finished.connect(sound.queue_free)
+
+				if game.combo > 14:
+					var combo_max_player = AudioStreamPlayer.new()
+					combo_max_player.stream = combo_max_sound
+					combo_max_player.volume_db = 5
+					add_sibling(combo_max_player)
+					combo_max_player.play()
+					combo_max_player.finished.connect(sound.queue_free)
+				else:
+					var combo_player = AudioStreamPlayer.new()
+					combo_player.stream = combo_sounds[game.combo - 1]
+					combo_player.volume_db = 5
+					add_sibling(combo_player)
+					combo_player.play()
+					combo_player.finished.connect(sound.queue_free)
 
 				for i in range(0, clear_info["lines_cleared"].size()):
 					var particle = GPUParticles2D.new()
@@ -97,7 +129,7 @@ func _input(event):
 					particle.position = Vector2(grid_start.x + tile_size * 5, grid_start.y + clear_info["lines_cleared"][i] * tile_size + tile_size)
 					particle.amount = 12
 					particle.lifetime = 0.5
-					particle.one_shot = true 
+					particle.one_shot = true
 					particle.explosiveness = 0.75
 					particle.finished.connect(queue_free)
 					particle.emitting = true
@@ -128,11 +160,11 @@ func _input(event):
 
 				get_viewport().get_window().connect("size_changed", func():
 					mat.set_shader_parameter("size", Vector2(tile_size * 40, 1))
-					perfect_clear_label.material = mat
+					perfect_clear_label.material=mat
 					perfect_clear_label.add_theme_font_size_override("font_size", tile_size * 1.2)
-					perfect_clear_label.position = Vector2(grid_start.x, grid_start.y + 12 * tile_size)
-					perfect_clear_label.pivot_offset = perfect_clear_label.size / 2
-					perfect_clear_label.size = Vector2(tile_size * 10, tile_size * 2)
+					perfect_clear_label.position=Vector2(grid_start.x, grid_start.y + 12 * tile_size)
+					perfect_clear_label.pivot_offset=perfect_clear_label.size / 2
+					perfect_clear_label.size=Vector2(tile_size * 10, tile_size * 2)
 				)
 
 				var tween = create_tween()
@@ -149,38 +181,37 @@ func _input(event):
 				add_sibling(perfect_clear_label)
 				add_child(timer)
 			
-		elif event.keycode == GameConfig.get_setting("controls", "left") && just_pressed:
+		elif event.keycode == GameConfig.get_setting("controls", "left")&&just_pressed:
 			game.move_piece(Game.MoveDirections.LEFT)
 			if (direction_held_first == "right"):
 				last_right_das_time += 0.4
 			
-		elif event.keycode == GameConfig.get_setting("controls", "right") && just_pressed:
+		elif event.keycode == GameConfig.get_setting("controls", "right")&&just_pressed:
 			game.move_piece(Game.MoveDirections.RIGHT)
 			if (direction_held_first == "left"):
 				last_left_das_time += 0.4
 			
-		elif event.keycode == GameConfig.get_setting("controls", "soft_drop") && just_pressed:
+		elif event.keycode == GameConfig.get_setting("controls", "soft_drop")&&just_pressed:
 			if (GameConfig.get_setting("handling", "sdf") == 0):
 				for i in range(0, 20):
 					game.move_piece(Game.MoveDirections.DOWN)
 			game.move_piece(Game.MoveDirections.DOWN)
 			
-		elif event.keycode == GameConfig.get_setting("controls", "rotate_cw") && just_pressed:
+		elif event.keycode == GameConfig.get_setting("controls", "rotate_cw")&&just_pressed:
 			game.rotate_piece(Piece.RotationAmount.NINETY_DEGREES)
 			
-		elif event.keycode == GameConfig.get_setting("controls", "rotate_ccw") && just_pressed:
+		elif event.keycode == GameConfig.get_setting("controls", "rotate_ccw")&&just_pressed:
 			game.rotate_piece(Piece.RotationAmount.TWO_HUNDRED_SEVENTY_DEGREES)
 			
-		elif event.keycode == GameConfig.get_setting("controls", "rotate_180") && just_pressed:
+		elif event.keycode == GameConfig.get_setting("controls", "rotate_180")&&just_pressed:
 			game.rotate_piece(Piece.RotationAmount.ONE_HUNDRED_EIGHTY_DEGREES)
 			
-		elif event.keycode == GameConfig.get_setting("controls", "hold") && just_pressed:
+		elif event.keycode == GameConfig.get_setting("controls", "hold")&&just_pressed:
 			game.hold()
-		elif event.keycode == GameConfig.get_setting("controls", "restart") && just_pressed:
+		elif event.keycode == GameConfig.get_setting("controls", "restart")&&just_pressed:
 			game.restart()
 			time_elapsed = 0
 			last_gravity_time = -1
-		
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -189,7 +220,7 @@ func _process(delta):
 
 	# If piece can't moving down start lock timer
 	if (game.try_to_move_piece(Game.MoveDirections.DOWN).is_empty()):
-		if (game.drop_lock_time_begin == -1):
+		if (game.drop_lock_time_begin == - 1):
 			game.drop_lock_time_begin = time_elapsed
 		elif (time_elapsed - game.drop_lock_time_begin > game.DROP_LOCK_DELAY / 1000.0):
 			game.hard_drop()
@@ -198,11 +229,10 @@ func _process(delta):
 	else:
 		game.drop_lock_time_begin = -1
 
-
-	if Input.is_key_pressed(GameConfig.get_setting("controls", "left")) && direction_held_first == "":
+	if Input.is_key_pressed(GameConfig.get_setting("controls", "left"))&&direction_held_first == "":
 		direction_held_first = "left"
 		handle_left_das()
-	elif Input.is_key_pressed(GameConfig.get_setting("controls", "right")) && direction_held_first == "":
+	elif Input.is_key_pressed(GameConfig.get_setting("controls", "right"))&&direction_held_first == "":
 		direction_held_first = "right"
 		handle_right_das()
 	
@@ -230,7 +260,7 @@ func _process(delta):
 		game.move_piece(Game.MoveDirections.DOWN)
 		last_gravity_time = time_elapsed
 		
-	elif last_gravity_time == -1:
+	elif last_gravity_time == - 1:
 		last_gravity_time = time_elapsed
 
 	queue_redraw()
@@ -260,7 +290,6 @@ func on_window_resize():
 	window_center = window_size / 2
 	tile_size = window_size.y / 30
 	grid_start = Vector2(window_center.x - 5 * tile_size - tile_size / 2, window_center.y - 12 * tile_size - tile_size / 2)
-	
 
 @onready var tile_map: TileMap = $"../TileMap"
 @onready var tile_map_texture: Texture2D = tile_map.tile_set.get_source(0).texture
@@ -371,7 +400,6 @@ func handle_left_das():
 		last_arr_time = -1
 		if (direction_held_first == "left"):
 			direction_held_first = ""
-
 
 func handle_right_das():
 	if Input.is_key_pressed(GameConfig.get_setting("controls", "right")):
